@@ -1,0 +1,44 @@
+name: Sync JSON Data
+
+on:
+  schedule:
+    - cron: '0 17 * * *' # Run at midnight UTC+7 daily
+  workflow_dispatch: # Allows manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  sync-json:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout 🛎
+      uses: actions/checkout@v4
+
+    - name: Fetch current law.json 🧾
+      run: cp data/law.json old_law.json
+
+    - name: Fetch new data 🏃🏻‍♂️
+      run: |
+        curl -L -s "https://script.google.com/macros/s/${{ secrets.KEY_APP_SCRIPT }}/exec?action=getData" -o data/law.json
+
+    - name: Check for changes 📊
+      run: |
+        if diff -q data/law.json old_law.json > /dev/null; then
+          echo "No changes detected, exiting."
+          exit 0
+        else
+          echo "Changes detected, proceeding to commit."
+        fi
+
+    - name: Commit and Push Changes
+      if: success()
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add data/law.json
+        git commit -m "Sync JSON data from Google Apps Script"
+        git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
