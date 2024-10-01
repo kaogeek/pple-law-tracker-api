@@ -32,6 +32,9 @@ jobs:
           echo "Changes detected, proceeding to commit."
         fi
 
+    - name: Remove old_law.json to prevent untracked file error 🧹
+      run: rm old_law.json
+
     - name: Commit and Push Changes
       if: success()
       run: |
