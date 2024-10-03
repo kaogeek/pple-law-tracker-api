@@ -24,19 +24,21 @@ jobs:
         curl -L -s "https://script.google.com/macros/s/${{ secrets.KEY_APP_SCRIPT }}/exec?action=getData" -o data/law.json
 
     - name: Check for changes 📊
+      id: check_changes
       run: |
         if diff -q data/law.json old_law.json > /dev/null; then
           echo "No changes detected, exiting."
-          exit 0
+          echo "changes_detected=false" >> $GITHUB_ENV
         else
-          echo "Changes detected, proceeding to commit."
+          echo "Changes detected."
+          echo "changes_detected=true" >> $GITHUB_ENV
         fi
 
     - name: Remove old_law.json to prevent untracked file error 🧹
       run: rm old_law.json
 
     - name: Commit and Push Changes
-      if: success()
+      if: env.changes_detected == 'true'  # Only run if changes were detected
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
